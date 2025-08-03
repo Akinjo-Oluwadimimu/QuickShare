@@ -1,13 +1,23 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>QuickShare</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <h1>QuickShare</h1>
-  <p>Scan QR code below to upload file from your phone:</p>
-  <iframe src="/upload-url" width="300" height="350"></iframe>
-  <p><a href="/uploads-list" target="_blank">📂 View Uploaded Files</a></p>
-</body>
-</html>
+<!DOCTYPE html><html><head>
+  <title>Upload File</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head><body class="bg-gray-100 min-h-screen flex flex-col items-center p-6">
+  <div class="bg-white p-6 rounded shadow-md w-full max-w-md">
+    <h1 class="text-2xl font-semibold mb-4">📤 Upload Your File</h1>
+    <form id="uploadForm" class="flex flex-col">
+      <input type="file" name="file" required class="mb-4">
+      <button type="submit" class="bg-blue-600 text-white py-2 rounded">Upload</button>
+    </form>
+    <div id="msg" class="mt-4 text-green-600"></div>
+    <a href="/public/dashboard.html" class="mt-4 text-blue-600 hover:underline">📂 View Dashboard</a>
+  </div>
+  <script>
+    document.getElementById('uploadForm').onsubmit = async e => {
+      e.preventDefault();
+      const resp = await fetch('/api/upload', { method: 'POST', body: new FormData(e.target) });
+      const j = await resp.json();
+      document.getElementById('msg').innerText = j.error ? j.error : 'Uploaded: ' + j.name;
+    };
+  </script>
+</body></html>
