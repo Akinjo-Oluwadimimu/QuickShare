@@ -49,6 +49,21 @@ app.get("/upload-url", async (req, res) => {
   `);
 });
 
+app.get("/uploads-list", (req, res) => {
+  fs.readdir(uploadPath, (err, files) => {
+    if (err) {
+      return res.status(500).send("Unable to list uploaded files.");
+    }
+    const list = files
+      .map(
+        (file) =>
+          `<li><a href="/uploads/${file}" target="_blank">${file}</a></li>`
+      )
+      .join("");
+    res.send(`<h2>Uploaded Files</h2><ul>${list}</ul>`);
+  });
+});
+
 // Handle uploads
 app.post("/upload", upload.single("file"), (req, res) => {
   const fileUrl = `/uploads/${req.file.filename}`;
