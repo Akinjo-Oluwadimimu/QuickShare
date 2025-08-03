@@ -1,0 +1,22 @@
+<!DOCTYPE html><html><head>
+  <title>Dashboard</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head><body class="bg-gray-100 p-6 min-h-screen">
+  <div class="max-w-3xl mx-auto bg-white shadow rounded p-6">
+    <h1 class="text-2xl font-semibold mb-4">📁 Uploaded Files</h1>
+    <ul id="list" class="space-y-2"></ul>
+    <a href="/" class="mt-6 inline-block text-blue-600 hover:underline">← Back</a>
+  </div>
+  <script>
+    fetch('/api/list').then(r => r.json()).then(arr => {
+      const ul = document.getElementById('list');
+      (arr.length ? arr : []).forEach(f => {
+        const li = document.createElement('li');
+        li.innerHTML = `<a href="${f.url}" target="_blank" class="text-blue-600 hover:underline">${f.name}</a>`;
+        ul.appendChild(li);
+      });
+      if (!arr.length) ul.innerHTML = '<li>No uploads yet.</li>';
+    });
+  </script>
+</body></html>
