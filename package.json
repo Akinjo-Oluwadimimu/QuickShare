@@ -1,8 +1,8 @@
 {
   "name": "quickshare",
   "version": "1.0.0",
-   "dependencies": {
+  "dependencies": {
     "@supabase/supabase-js": "^2.0.0",
-    "formidable": "^3.5.0"
+    "formidable": "^3.5.4"
   }
 }
