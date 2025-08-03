@@ -1,34 +1,46 @@
 import { createClient } from '@supabase/supabase-js';
-import formidable from 'formidable';
-import fs from 'fs';
-
-export const config = { api: { bodyParser: false } };
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).end();
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Only POST method is allowed' });
+  }
 
-  const form = formidable({ keepExtensions: true });
+  try {
+    const { file, filename, contentType } = req.body;
 
-  form.parse(req, async (err, fields, files) => {
-    if (err || !files.file) return res.status(400).json({ error: 'No file uploaded.' });
+    if (!file || !filename || !contentType) {
+      return res.status(400).json({ error: 'Missing required fields: file, filename, contentType' });
+    }
 
-    const f = files.file;
-    const fileStream = fs.createReadStream(f.filepath);
-    const { data, error } = await supabase.storage
+    const buffer = Buffer.from(file, 'base64');
+
+    const filePath = `uploads/${Date.now()}-${filename}`;
+
+    const { data, error: uploadError } = await supabase.storage
       .from('uploads')
-      .upload(`files/${Date.now()}-${f.originalFilename}`, fileStream);
+      .upload(filePath, buffer, {
+        contentType: contentType,
+        cacheControl: '3600',
+        upsert: false,
+      });
 
-    if (error) return res.status(500).json({ error: error.message });
+    if (uploadError) {
+      return res.status(500).json({ error: uploadError.message });
+    }
 
-    const publicUrl = supabase.storage
+    const { data: publicUrlData } = supabase
+      .storage
       .from('uploads')
-      .getPublicUrl(data.path).publicUrl;
+      .getPublicUrl(filePath);
 
-    return res.status(200).json({ url: publicUrl, name: f.originalFilename });
-  });
+    return res.status(200).json({ url: publicUrlData.publicUrl });
+  } catch (err) {
+    console.error('Upload error:', err);
+    return res.status(500).json({ error: 'Unexpected error during upload' });
+  }
 }
