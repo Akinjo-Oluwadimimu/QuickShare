@@ -1,27 +1,37 @@
 const express = require("express");
 const multer = require("multer");
-const QRCode = require("qrcode");
 const path = require("path");
+const fs = require("fs");
+const QRCode = require("qrcode");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
-// Serve public and uploads
-app.use(express.static("public"));
-app.use("/uploads", express.static("uploads"));
+// Create uploads directory if it doesn't exist
+const uploadDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
 
-// File upload setup
+// Serve static files from public folder
+app.use(express.static(path.join(__dirname, "public")));
+
+// Set up Multer
 const storage = multer.diskStorage({
-  destination: "uploads/",
-  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname);
+  }
 });
 const upload = multer({ storage });
 
-// Route: QR Code homepage
+// Root route: show QR code to the upload page
 app.get("/", async (req, res) => {
   const host = req.headers.host;
-  const url = `https://${host}/upload.html`;
-  const qr = await QRCode.toDataURL(url);
+  const publicURL = `https://${host}/upload.html`;
+  const qrCode = await QRCode.toDataURL(publicURL);
 
   const html = `
     <!DOCTYPE html>
@@ -29,28 +39,29 @@ app.get("/", async (req, res) => {
     <head>
       <title>QuickShare</title>
       <style>
-        body { font-family: Arial; text-align: center; margin-top: 40px; }
+        body { font-family: Arial; text-align: center; margin-top: 50px; }
         img { margin-top: 20px; }
       </style>
     </head>
     <body>
       <h1>QuickShare</h1>
-      <p>Scan this QR code to upload a file from your phone:</p>
-      <img src="${qr}" alt="QR Code" />
+      <p>Scan to upload from your phone</p>
+      <img src="${qrCode}" alt="QR Code to Upload Page" />
     </body>
     </html>
   `;
   res.send(html);
 });
 
-// Upload handler
+// Handle file upload
 app.post("/upload", upload.single("file"), (req, res) => {
-  res.send(`
-    <h2>Upload successful!</h2>
-    <a href="/uploads/${req.file.filename}" target="_blank">Open File</a>
-  `);
+  if (!req.file) {
+    return res.status(400).send("No file uploaded.");
+  }
+  res.send("✅ File uploaded successfully!");
 });
 
+// Start server
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
