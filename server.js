@@ -1,42 +1,46 @@
 const express = require("express");
 const multer = require("multer");
-const path = require("path");
 const QRCode = require("qrcode");
-const os = require("os");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// Serve public and uploads
 app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
 
-// File upload config
+// File upload setup
 const storage = multer.diskStorage({
   destination: "uploads/",
   filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
 });
 const upload = multer({ storage });
 
-// Root route (displays QR code for upload page)
+// Route: QR Code homepage
 app.get("/", async (req, res) => {
   const host = req.headers.host;
-  const url = `https://${host}/upload.html`; // Use https when deployed on Railway
+  const url = `https://${host}/upload.html`;
   const qr = await QRCode.toDataURL(url);
 
-  res.send(`
-    <h1>QuickShare</h1>
-    <p>Scan this QR code to upload a file from your phone:</p>
-    <img src="${qr}" />
-  `);
-});
-
-// (Optional) Local network QR route
-app.get("/upload-url", async (req, res) => {
-  const ip = getLocalIP();
-  const url = `http://${ip}:${PORT}/upload.html`;
-  const qr = await QRCode.toDataURL(url);
-  res.send(`<h2>Scan this QR to upload file</h2><img src="${qr}" />`);
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>QuickShare</title>
+      <style>
+        body { font-family: Arial; text-align: center; margin-top: 40px; }
+        img { margin-top: 20px; }
+      </style>
+    </head>
+    <body>
+      <h1>QuickShare</h1>
+      <p>Scan this QR code to upload a file from your phone:</p>
+      <img src="${qr}" alt="QR Code" />
+    </body>
+    </html>
+  `;
+  res.send(html);
 });
 
 // Upload handler
@@ -47,17 +51,6 @@ app.post("/upload", upload.single("file"), (req, res) => {
   `);
 });
 
-// Local IP helper
-function getLocalIP() {
-  const interfaces = os.networkInterfaces();
-  for (let name in interfaces) {
-    for (let iface of interfaces[name]) {
-      if (iface.family === "IPv4" && !iface.internal) return iface.address;
-    }
-  }
-}
-
-// Start server
-app.listen(PORT, () =>
-  console.log(`Server running at http://localhost:${PORT}`)
-);
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+});
