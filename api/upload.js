@@ -1,3 +1,4 @@
+// pages/api/upload.js
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -18,13 +19,12 @@ export default async function handler(req, res) {
     }
 
     const buffer = Buffer.from(file, 'base64');
-
     const filePath = `uploads/${Date.now()}-${filename}`;
 
     const { data, error: uploadError } = await supabase.storage
       .from('uploads')
       .upload(filePath, buffer, {
-        contentType: contentType,
+        contentType,
         cacheControl: '3600',
         upsert: false,
       });
@@ -33,8 +33,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: uploadError.message });
     }
 
-    const { data: publicUrlData } = supabase
-      .storage
+    const { data: publicUrlData } = supabase.storage
       .from('uploads')
       .getPublicUrl(filePath);
 
