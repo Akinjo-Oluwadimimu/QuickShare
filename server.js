@@ -6,12 +6,31 @@ const os = require("os");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Middleware
+app.use(express.static("public"));
+app.use("/uploads", express.static("uploads"));
+
 // File upload config
 const storage = multer.diskStorage({
   destination: "uploads/",
   filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
 });
 const upload = multer({ storage });
+
+// ✅ Root route to keep app active
+app.get("/", async (req, res) => {
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  const host = req.headers.host;
+  const url = `https://${host}/upload.html`;
+  const qr = await QRCode.toDataURL(url);
+
+  res.send(`
+    <h1>QuickShare</h1>
+    <p>Scan this QR code to upload a file from your phone:</p>
+    <img src="${qr}" />
+  `);
+});
+
 
 app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
