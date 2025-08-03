@@ -32,10 +32,19 @@ app.get("/", async (req, res) => {
   const qr = await QRCode.toDataURL(publicURL);
 
   res.send(`
-    <h1>QuickShare</h1>
-    <p>Scan this QR code to upload a file from your phone:</p>
-    <img src="${qr}" />
-  `);
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <title>QuickShare</title>
+      <link rel="stylesheet" href="/style.css" />
+    </head>
+    <body>
+      <h1>QuickShare</h1>
+      <p>Scan this QR code to upload a file from your phone:</p>
+      <img src="${qr}" />
+    </body>
+  </html>
+`);
 });
 
 // Optional: /upload-url route for iframe (used in index.html)
@@ -43,6 +52,7 @@ app.get("/upload-url", async (req, res) => {
   const host = req.headers.host;
   const url = `https://${host}/upload.html`;
   const qr = await QRCode.toDataURL(url);
+  
   res.send(`
     <h2>Scan this QR to upload file</h2>
     <img src="${qr}" />
@@ -60,7 +70,18 @@ app.get("/uploads-list", (req, res) => {
           `<li><a href="/uploads/${file}" target="_blank">${file}</a></li>`
       )
       .join("");
-    res.send(`<h2>Uploaded Files</h2><ul>${list}</ul>`);
+    res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Uploaded Files</title>
+      <link rel="stylesheet" href="/style.css" />
+    </head>
+    <body>
+    <h2>Uploaded Files</h2><ul>${list}</ul>
+    </body>
+    </html>
+    `);
   });
 });
 
@@ -68,8 +89,17 @@ app.get("/uploads-list", (req, res) => {
 app.post("/upload", upload.single("file"), (req, res) => {
   const fileUrl = `/uploads/${req.file.filename}`;
   res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Upload Successful</title>
+      <link rel="stylesheet" href="/style.css" />
+    </head>
+    <body>
     <h2>Upload successful!</h2>
     <a href="${fileUrl}" target="_blank">Open Uploaded File</a>
+    </body>
+    </html>
   `);
 });
 
