@@ -22,29 +22,28 @@ export default async function handler(req, res) {
 
   form.parse(req, async (err, fields, files) => {
     if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Error parsing the form' });
+      console.error('Form parse error:', err);
+      return res.status(500).json({ error: 'Form parsing error' });
     }
 
-    const file = files.file;
+    const file = files.file?.[0];
     if (!file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const filePath = file[0].filepath;
-    const fileStream = fs.createReadStream(filePath);
-    const fileName = file[0].originalFilename;
+    const fileBuffer = fs.readFileSync(file.filepath);
+    const fileName = file.originalFilename;
 
-    const { data, error } = await supabase.storage
+    const { data, error: uploadError } = await supabase.storage
       .from('your-public-bucket') // Replace with your bucket name
-      .upload(`uploads/${fileName}`, fileStream, {
+      .upload(`uploads/${fileName}`, fileBuffer, {
         cacheControl: '3600',
         upsert: true,
-        contentType: file[0].mimetype,
+        contentType: file.mimetype,
       });
 
-    if (error) {
-      console.error(error);
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
       return res.status(500).json({ error: 'Upload to Supabase failed' });
     }
 
